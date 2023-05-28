@@ -23,8 +23,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.LinkedHashMap;
 import java.nio.charset.Charset;
+import org.json.*;
 
 class WebServer {
 	public static void main(String args[]) {
@@ -221,8 +223,10 @@ class WebServer {
 						builder.append("Content-Type: text/html; charset=utf-8\n");
 						builder.append("\n");
 						builder.append("Malformed request.");
+						builder.append("<br>");
 						builder.append("Please include numeric parameters num1 and num2:");
-						builder.append("multiply?num1=<integer>&num2=<integer>");
+						builder.append("<br>");
+						builder.append("multiply?num1=value&num2=value");
 					}
 
 				} else if (request.contains("github?")) {
@@ -235,17 +239,60 @@ class WebServer {
 					//     "/repos/OWNERNAME/REPONAME/contributors"
 
 					Map<String, String> query_pairs = new LinkedHashMap<String, String>();
-					query_pairs = splitQuery(request.replace("github?", ""));
-					String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
-					System.out.println(json);
+					try {
+						query_pairs = splitQuery(request.replace("github?", ""));
+						String jsonStr = fetchURL("https://api.github.com/" + query_pairs.get("query"));
+						
+						// try to parse the json
+						if (jsonStr.startsWith("[")) {
+							// is an array
+							JSONArray json = new JSONArray(jsonStr);
+							builder.append("HTTP/1.1 200 OK\n");
+							builder.append("Content-Type: text/html; charset=utf-8\n");
+							builder.append("\n");
+							builder.append("Repositories returned:");
+							builder.append("<p>");
 
-					builder.append("HTTP/1.1 200 OK\n");
-					builder.append("Content-Type: text/html; charset=utf-8\n");
-					builder.append("\n");
-					builder.append("Check the todos mentioned in the Java source file");
-					// TODO: Parse the JSON returned by your fetch and create an appropriate
-					// response based on what the assignment document asks for
-
+							// loop through all elements
+							for (int i = 0; i < json.length(); i++) {
+								builder.append("Full name: " + json.getJSONObject(i).getString("full_name"));
+								builder.append("<br>");
+								builder.append("Id: " + json.getJSONObject(i).getInt("id"));
+								builder.append("<br>");
+								builder.append("Owner: " + json.getJSONObject(i).getJSONObject("owner").getString("login"));
+								builder.append("<p>");
+							}
+						} else {
+							// if it's a single record
+							// check if request returned Not Found from github
+							if (jsonStr.isBlank()) {
+								throw new NoSuchElementException();
+							}
+							
+							// else process
+							JSONObject json = new JSONObject(jsonStr);
+							builder.append("Full name: " + json.getString("full_name"));
+							builder.append("<br>");
+							builder.append("Id: " + json.getInt("id"));
+							builder.append("<br>");
+							builder.append("Owner: " + json.getJSONObject("owner").getString("login"));
+							builder.append("<p>");
+						}
+						
+					} catch (NoSuchElementException e) {
+						builder.append("HTTP/1.1 404 Not found\n");
+						builder.append("Content-Type: text/html; charset=utf-8\n");
+						builder.append("\n");
+						builder.append("Record not found. Verify if query format or parameters are correct.");
+						e.printStackTrace();
+					} catch (Exception e) {
+						builder.append("HTTP/1.1 400 Bad request\n");
+						builder.append("Content-Type: text/html; charset=utf-8\n");
+						builder.append("\n");
+						builder.append("Malformed query. Please veryfy if the format or parameters are correct.");
+						e.printStackTrace();
+					}
+					
 				} else {
 					// if the request is not recognized at all
 
