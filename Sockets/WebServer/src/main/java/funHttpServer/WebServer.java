@@ -215,15 +215,12 @@ class WebServer {
 						builder.append("\n");
 						builder.append("Result is: " + result);
 					} else {
-						// TODO: Include error handling here with a correct error code and
-						// a response that makes sense
-						
 						// Generate error
-						builder.append("HTTP/1.1 400 OK\n");
+						builder.append("HTTP/1.1 400 Bad request\n");
 						builder.append("Content-Type: text/html; charset=utf-8\n");
 						builder.append("\n");
-						builder.append("Malformed request.\n"
-								+ "Please include numeric parameters num1 and num2.");
+						builder.append("Malformed request.");
+						builder.append("Please include numeric parameters num1 and num2.");
 					}
 
 				} else if (request.contains("github?")) {
