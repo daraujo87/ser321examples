@@ -299,11 +299,11 @@ class WebServer {
 						e.printStackTrace();
 					}
 					
-				} else if (request.contains("decypher?")) {
+				} else if (request.contains("decipher?")) {
 					
 					try {
 						Map<String, String> parameters = new LinkedHashMap<String, String>();
-						parameters = splitQuery(request.replace("decypher?", ""));
+						parameters = splitQuery(request.replace("decipher?", ""));
 
 						// check if we have both parameters
 						if (!parameters.containsKey("string") || !parameters.containsKey("seed"))
@@ -330,7 +330,7 @@ class WebServer {
 						builder.append("HTTP/1.1 200 OK\n");
 						builder.append("Content-Type: text/html; charset=utf-8\n");
 						builder.append("\n");
-						builder.append("Decyphered string: " + cypherBuilder.toString());
+						builder.append("Deciphered string: " + cypherBuilder.toString());
 
 					} catch (IllegalStateException e) {
 						builder.append("HTTP/1.1 400 Bad request\n");
