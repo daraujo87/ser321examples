@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Map;
+import java.util.MissingFormatArgumentException;
 import java.util.NoSuchElementException;
 import java.util.LinkedHashMap;
 import java.nio.charset.Charset;
@@ -241,6 +242,11 @@ class WebServer {
 					Map<String, String> query_pairs = new LinkedHashMap<String, String>();
 					try {
 						query_pairs = splitQuery(request.replace("github?", ""));
+						// check if parameter name is correct
+						if (!query_pairs.containsKey("query"))
+							throw new Exception();
+						
+						// send request to github
 						String jsonStr = fetchURL("https://api.github.com/" + query_pairs.get("query"));
 						
 						// try to parse the json
@@ -289,7 +295,113 @@ class WebServer {
 						builder.append("HTTP/1.1 400 Bad request\n");
 						builder.append("Content-Type: text/html; charset=utf-8\n");
 						builder.append("\n");
-						builder.append("Malformed query. Please veryfy if the format or parameters are correct.");
+						builder.append("Malformed query. Please verify if the format or parameters are correct.");
+						e.printStackTrace();
+					}
+					
+				} else if (request.contains("decypher?")) {
+					
+					try {
+						Map<String, String> parameters = new LinkedHashMap<String, String>();
+						parameters = splitQuery(request.replace("decypher?", ""));
+
+						// check if we have both parameters
+						if (!parameters.containsKey("string") || !parameters.containsKey("seed"))
+							throw new IllegalStateException();
+
+						// capture parameters
+						String cypher = parameters.get("string");
+						int seed = Integer.parseInt(parameters.get("seed"));
+
+						// check if parameters are valid
+						if (cypher.isBlank() || seed == 0)
+							throw new IllegalArgumentException();
+
+						// apply cypher
+						StringBuilder cypherBuilder = new StringBuilder();
+						for (char c : cypher.toCharArray()) {
+							int tmp = c - '!';
+							tmp = (tmp - seed) % 93;
+							tmp = tmp + '!';
+							cypherBuilder.append((char)tmp);
+						}
+
+						// generate response
+						builder.append("HTTP/1.1 200 OK\n");
+						builder.append("Content-Type: text/html; charset=utf-8\n");
+						builder.append("\n");
+						builder.append("Decyphered string: " + cypherBuilder.toString());
+
+					} catch (IllegalStateException e) {
+						builder.append("HTTP/1.1 400 Bad request\n");
+						builder.append("Content-Type: text/html; charset=utf-8\n");
+						builder.append("\n");
+						builder.append("Missing parameters. Please verify the format of the query.");
+						e.printStackTrace();
+					} catch (IllegalArgumentException e) {
+						builder.append("HTTP/1.1 400 Bad request\n");
+						builder.append("Content-Type: text/html; charset=utf-8\n");
+						builder.append("\n");
+						builder.append("Invalid parameters. Please verify the values being passed.");
+						e.printStackTrace();
+					} catch (Exception e) {
+						builder.append("HTTP/1.1 400 Bad request\n");
+						builder.append("Content-Type: text/html; charset=utf-8\n");
+						builder.append("\n");
+						builder.append("Malformed query. Please verify the format of the query.");
+						e.printStackTrace();
+					}
+					
+				} else if (request.contains("cypher?")) {
+					
+					try {
+						Map<String, String> parameters = new LinkedHashMap<String, String>();
+						parameters = splitQuery(request.replace("cypher?", ""));
+
+						// check if we have both parameters
+						if (!parameters.containsKey("string") || !parameters.containsKey("seed"))
+							throw new IllegalStateException();
+
+						// capture parameters
+						String cypher = parameters.get("string");
+						int seed = Integer.parseInt(parameters.get("seed"));
+
+						// check if parameters are valid
+						if (cypher.isBlank() || seed == 0)
+							throw new IllegalArgumentException();
+
+						// apply cypher
+						StringBuilder cypherBuilder = new StringBuilder();
+						for (char c : cypher.toCharArray()) {
+							int tmp = c - '!';
+							tmp = (tmp + seed) % 93;
+							tmp = tmp + '!';
+							cypherBuilder.append((char)tmp);
+						}
+
+						// generate response
+						builder.append("HTTP/1.1 200 OK\n");
+						builder.append("Content-Type: text/html; charset=utf-8\n");
+						builder.append("\n");
+						builder.append("Cyphered string: " + cypherBuilder.toString());
+
+					} catch (IllegalStateException e) {
+						builder.append("HTTP/1.1 400 Bad request\n");
+						builder.append("Content-Type: text/html; charset=utf-8\n");
+						builder.append("\n");
+						builder.append("Missing parameters. Please verify the format of the query.");
+						e.printStackTrace();
+					} catch (IllegalArgumentException e) {
+						builder.append("HTTP/1.1 400 Bad request\n");
+						builder.append("Content-Type: text/html; charset=utf-8\n");
+						builder.append("\n");
+						builder.append("Invalid parameters. Please verify the values being passed.");
+						e.printStackTrace();
+					} catch (Exception e) {
+						builder.append("HTTP/1.1 400 Bad request\n");
+						builder.append("Content-Type: text/html; charset=utf-8\n");
+						builder.append("\n");
+						builder.append("Malformed query. Please verify the format of the query.");
 						e.printStackTrace();
 					}
 					
