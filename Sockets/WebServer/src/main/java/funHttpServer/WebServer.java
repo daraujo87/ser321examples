@@ -16,18 +16,31 @@ write a response back
 
 package funHttpServer;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Random;
-import java.util.Map;
-import java.util.MissingFormatArgumentException;
-import java.util.NoSuchElementException;
 import java.util.LinkedHashMap;
-import java.nio.charset.Charset;
-import org.json.*;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Random;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 class WebServer {
 	public static void main(String args[]) {
@@ -310,27 +323,29 @@ class WebServer {
 							throw new IllegalStateException();
 
 						// capture parameters
-						String cypher = parameters.get("string");
+						String cipher = parameters.get("string");
 						int seed = Integer.parseInt(parameters.get("seed"));
 
 						// check if parameters are valid
-						if (cypher.isBlank() || seed == 0)
+						if (cipher.isBlank() || seed == 0)
 							throw new IllegalArgumentException();
 
-						// apply cypher
-						StringBuilder cypherBuilder = new StringBuilder();
-						for (char c : cypher.toCharArray()) {
-							int tmp = c - '!';
-							tmp = (tmp - seed) % 93;
-							tmp = tmp + '!';
-							cypherBuilder.append((char)tmp);
+						// decipher string
+						System.out.println("To decode: " + cipher);
+						String urlDecoded = URLDecoder.decode(cipher, "UTF-8");
+						StringBuilder cipherBuilder = new StringBuilder();
+						for (char c : urlDecoded.toCharArray()) {
+							int tmp = c - 32;
+							tmp = (tmp + 94 - (seed % 94)) % 94;
+							tmp = tmp + 32;
+							cipherBuilder.append((char)tmp);
 						}
 
 						// generate response
 						builder.append("HTTP/1.1 200 OK\n");
 						builder.append("Content-Type: text/html; charset=utf-8\n");
 						builder.append("\n");
-						builder.append("Deciphered string: " + cypherBuilder.toString());
+						builder.append("Deciphered string: " + cipherBuilder.toString());
 
 					} catch (IllegalStateException e) {
 						builder.append("HTTP/1.1 400 Bad request\n");
@@ -352,38 +367,43 @@ class WebServer {
 						e.printStackTrace();
 					}
 					
-				} else if (request.contains("cypher?")) {
+				} else if (request.contains("cipher?")) {
 					
 					try {
 						Map<String, String> parameters = new LinkedHashMap<String, String>();
-						parameters = splitQuery(request.replace("cypher?", ""));
+						parameters = splitQuery(request.replace("cipher?", ""));
 
 						// check if we have both parameters
 						if (!parameters.containsKey("string") || !parameters.containsKey("seed"))
 							throw new IllegalStateException();
 
 						// capture parameters
-						String cypher = parameters.get("string");
+						String cipher = parameters.get("string");
 						int seed = Integer.parseInt(parameters.get("seed"));
 
 						// check if parameters are valid
-						if (cypher.isBlank() || seed == 0)
+						if (cipher.isBlank() || seed == 0)
 							throw new IllegalArgumentException();
 
-						// apply cypher
-						StringBuilder cypherBuilder = new StringBuilder();
-						for (char c : cypher.toCharArray()) {
-							int tmp = c - '!';
-							tmp = (tmp + seed) % 93;
-							tmp = tmp + '!';
-							cypherBuilder.append((char)tmp);
+						// apply cipher
+						StringBuilder cipherBuilder = new StringBuilder();
+						for (char c : cipher.toCharArray()) {
+							int tmp = c - 32;
+							tmp = (tmp + seed) % 94;
+							tmp = tmp + 32;
+							cipherBuilder.append((char)tmp);
 						}
-
+						
+						//String htmlEncoded = StringEscapeUtils.escapeHtml4(cipherBuilder.toString());
+						String urlEncoded = URLEncoder.encode(cipherBuilder.toString(), "UTF-8");
+						
 						// generate response
 						builder.append("HTTP/1.1 200 OK\n");
 						builder.append("Content-Type: text/html; charset=utf-8\n");
 						builder.append("\n");
-						builder.append("Cyphered string: " + cypherBuilder.toString());
+						builder.append("ciphered string: " + cipherBuilder.toString());
+						builder.append("<br>");
+						builder.append("HTML encoded (use this for the decipher query): " + urlEncoded);
 
 					} catch (IllegalStateException e) {
 						builder.append("HTTP/1.1 400 Bad request\n");
