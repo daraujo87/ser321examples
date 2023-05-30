@@ -238,7 +238,7 @@ class WebServer {
 						builder.append("\n");
 						builder.append("Malformed request.");
 						builder.append("<br>");
-						builder.append("Please include numeric parameters num1 and num2:");
+						builder.append("Please include integer parameters num1 and num2:");
 						builder.append("<br>");
 						builder.append("multiply?num1=value&num2=value");
 					}
